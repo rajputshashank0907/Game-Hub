@@ -4,16 +4,15 @@
 // This module handles all user input from the terminal using
 // Node.js readline/promises. It provides helpers for asking
 // questions, validating numbers, choosing from options, and
-// yes/no confirmations.
+// yes/no confirmations. Includes robust EOF and SIGINT handling.
 // ============================================================
 
 import * as readline from 'readline/promises';
 import { showError } from './display.js';
 
-// ----- Shared Readline Interface (Lazy Initialized) -----
-// Lazily created upon first prompt so importing this module
-// during automated tests doesn't keep stdin open.
+// Shared Readline Interface (Lazy Initialized)
 let rl = null;
+let isClosed = false;
 
 export function getReadlineInterface() {
   if (!rl) {
@@ -23,7 +22,7 @@ export function getReadlineInterface() {
     });
 
     rl.on('close', () => {
-      // Graceful handler if closed externally
+      isClosed = true;
     });
   }
   return rl;
@@ -32,18 +31,49 @@ export function getReadlineInterface() {
 // ============================================================
 // askQuestion — Ask the user a question and return their answer
 // ============================================================
+// Handles EOF (Ctrl+D) and closed streams cleanly without hanging.
 // @param  {string} prompt — The question to display
 // @returns {Promise<string>} The user's trimmed response
 // ============================================================
 export async function askQuestion(prompt) {
-  try {
-    const activeRL = getReadlineInterface();
-    const answer = await activeRL.question(prompt);
-    return answer.trim();
-  } catch {
-    // If EOF or stream error, return empty string gracefully
-    return '';
+  if (isClosed) {
+    process.exit(0);
   }
+
+  const activeRL = getReadlineInterface();
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const onClose = () => {
+      if (!settled) {
+        settled = true;
+        isClosed = true;
+        // Graceful exit on EOF
+        process.exit(0);
+      }
+    };
+
+    activeRL.once('close', onClose);
+
+    activeRL.question(prompt).then(
+      (answer) => {
+        if (!settled) {
+          settled = true;
+          activeRL.removeListener('close', onClose);
+          resolve(answer.trim());
+        }
+      },
+      () => {
+        if (!settled) {
+          settled = true;
+          activeRL.removeListener('close', onClose);
+          isClosed = true;
+          process.exit(0);
+        }
+      }
+    );
+  });
 }
 
 // ============================================================
@@ -136,6 +166,7 @@ export async function waitForEnter(msg = 'Press Enter to continue...') {
 // ============================================================
 export function closeInput() {
   if (rl) {
+    isClosed = true;
     rl.close();
     rl = null;
   }
