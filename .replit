@@ -1,0 +1,8 @@
+entrypoint = "src/index.js"
+run = "npm start"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["node", "src/index.js"]

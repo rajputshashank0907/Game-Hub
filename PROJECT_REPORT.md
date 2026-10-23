@@ -15,6 +15,8 @@
 - **Student Name:** [Student Name]  
 - **Roll Number / Enrollment No:** [Roll Number]  
 - **Project ID:** 2501010345  
+- **Source Code Repository:** https://github.com/rajputshashank0907/Game-Hub  
+- **Live Interactive Terminal:** https://stackblitz.com/github/rajputshashank0907/Game-Hub  
 - **Department:** Department of Computer Science & Engineering  
 - **Institution / College:** [College / University Name]  
 - **Faculty Guide / Supervisor:** [Supervisor / Professor Name]  

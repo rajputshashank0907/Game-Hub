@@ -4,7 +4,15 @@
 **Version:** 1.0.0  
 **License:** ISC  
 
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/rajputshashank0907/Game-Hub)
+[![Run on Replit](https://replit.com/badge/github/rajputshashank0907/Game-Hub)](https://replit.com/github/rajputshashank0907/Game-Hub)
+
 A comprehensive, professional, command-line gaming hub developed in modern JavaScript (ES Modules) for Node.js. Terminal Game Hub unifies six classic mini-games into a single interactive CLI application featuring persistent JSON-based player statistics, smart AI gameplay, robust input validation, and an ANSI-colored interface.
+
+### 🌐 Live Interactive Terminal & Submission Links
+- **GitHub Repository:** [https://github.com/rajputshashank0907/Game-Hub](https://github.com/rajputshashank0907/Game-Hub)
+- **Live In-Browser Terminal (StackBlitz):** [https://stackblitz.com/github/rajputshashank0907/Game-Hub](https://stackblitz.com/github/rajputshashank0907/Game-Hub) *(Play directly in your web browser with zero installation)*
+- **Interactive Cloud Environment (Replit):** [https://replit.com/github/rajputshashank0907/Game-Hub](https://replit.com/github/rajputshashank0907/Game-Hub)
 
 ---
 
