@@ -1,15 +1,20 @@
-// ============================================
-// 🔤 Word Scramble Game
+// ============================================================
+// wordScramble.js — 🔤 Word Scramble Game
+// ============================================================
 // Unscramble the letters to guess the word!
-// ============================================
+// Demonstrates: string manipulation, arrays, Fisher-Yates shuffle,
+// loop control, and scoring.
+// ============================================================
 
-import { showGameTitle, clearScreen } from '../utils/display.js';
+import {
+  showGameTitle, showSuccess, showError, showWarning, showInfo,
+  CYAN, YELLOW, GREEN, WHITE, RED, BOLD, DIM, RESET,
+} from '../utils/display.js';
 import { askQuestion, askChoice } from '../utils/input.js';
 import { getRandomInt } from '../utils/random.js';
-import chalk from 'chalk';
 
-// ── Word list with hints ──
-const WORDS = [
+// ── Word list with hints (at least 15 technical / programming words) ──
+export const WORDS = [
   { word: 'javascript', hint: 'A popular programming language for the web' },
   { word: 'computer', hint: 'An electronic device for processing data' },
   { word: 'keyboard', hint: 'Input device with keys for typing' },
@@ -31,45 +36,59 @@ const WORDS = [
 ];
 
 /**
- * Scramble a word using the Fisher-Yates shuffle.
+ * Pure function: Scramble a word using Fisher-Yates shuffle.
  * If the result happens to equal the original, re-shuffle (up to 10 tries).
+ * Words with fewer than 2 distinct characters will return as-is.
+ * @param {string} word - The word to scramble
+ * @returns {string} Scrambled word
  */
-function scrambleWord(word) {
-  const maxAttempts = 10;
+export function scrambleWord(word) {
+  // If word has fewer than 2 characters or all characters are identical
+  const uniqueChars = new Set(word.toLowerCase().split(''));
+  if (word.length <= 1 || uniqueChars.size <= 1) {
+    return word;
+  }
+
+  const maxAttempts = 15;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Split the word into an array of characters
     const chars = word.split('');
 
-    // Fisher-Yates shuffle (from the end to the beginning)
     for (let i = chars.length - 1; i > 0; i--) {
-      const j = getRandomInt(0, i); // random index 0..i
-      // Swap chars[i] and chars[j]
+      const j = getRandomInt(0, i);
       [chars[i], chars[j]] = [chars[j], chars[i]];
     }
 
     const scrambled = chars.join('');
 
-    // Only accept if the scrambled version differs from the original
-    if (scrambled !== word) {
+    if (scrambled.toLowerCase() !== word.toLowerCase()) {
       return scrambled;
     }
   }
 
-  // Fallback — just reverse if all attempts matched (very unlikely)
+  // Fallback: reverse the word
   return word.split('').reverse().join('');
 }
 
 /**
+ * Pure function: Calculate score based on attempt index (0, 1, 2).
+ * @param {number} attemptIndex - 0 for 1st attempt, 1 for 2nd, 2 for 3rd
+ * @returns {number} Points earned
+ */
+export function calculateScrambleScore(attemptIndex) {
+  const points = [30, 20, 10];
+  return points[attemptIndex] || 0;
+}
+
+/**
  * Main game entry point.
- * @param {object} stats — the player's persistent stats object
- * @returns {object} updated stats
+ * @param {object} stats — Player's persistent stats object
+ * @returns {object} Updated stats
  */
 export async function playWordScramble(stats) {
   let playAgain = true;
 
   while (playAgain) {
-    clearScreen();
     showGameTitle('🔤 Word Scramble');
 
     // ── Pick a random word ──
@@ -78,18 +97,10 @@ export async function playWordScramble(stats) {
     const scrambled = scrambleWord(word);
 
     // ── Display the scrambled word ──
-    console.log(
-      chalk.white('  Unscramble the following word:\n')
-    );
-    console.log(
-      chalk.cyan.bold(`    ${scrambled.toUpperCase()}\n`)
-    );
-    console.log(
-      chalk.gray(`  💡 Hint: ${hint}\n`)
-    );
+    console.log(`${WHITE}  Unscramble the following word:${RESET}\n`);
+    console.log(`${CYAN}${BOLD}    👉  ${scrambled.toUpperCase()}${RESET}\n`);
+    console.log(`${YELLOW}  💡 Hint: ${hint}${RESET}\n`);
 
-    // ── Points based on attempt number ──
-    const pointsByAttempt = [30, 20, 10];
     const maxAttempts = 3;
     let correct = false;
     let earnedPoints = 0;
@@ -97,59 +108,43 @@ export async function playWordScramble(stats) {
     // ── Give the player 3 attempts ──
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const remaining = maxAttempts - attempt;
-      console.log(
-        chalk.dim(`  Attempts remaining: ${remaining}`)
-      );
+      console.log(`${DIM}  Attempts remaining: ${remaining}${RESET}`);
 
-      const guess = await askQuestion('Your guess');
+      const guess = await askQuestion('  Your guess: ');
 
-      // Compare case-insensitively
+      // Compare case-insensitively and trimmed
       if (guess.trim().toLowerCase() === word.toLowerCase()) {
         correct = true;
-        earnedPoints = pointsByAttempt[attempt];
-        console.log();
-        console.log(
-          chalk.green.bold(`  🎉 Correct! The word was "${word}".`)
-        );
-        console.log(
-          chalk.green(`  You earned ${earnedPoints} points!\n`)
-        );
+        earnedPoints = calculateScrambleScore(attempt);
+        console.log('');
+        showSuccess(`Correct! The word was "${word}".`);
+        showSuccess(`You earned ${earnedPoints} points!`);
         break;
       } else if (attempt < maxAttempts - 1) {
-        // Wrong, but more attempts left
-        console.log(
-          chalk.red(`  ❌ Wrong! Try again.\n`)
-        );
+        showError('Wrong! Try again.\n');
       } else {
-        // Last attempt — game over
-        console.log();
-        console.log(
-          chalk.red.bold(`  😞 Out of attempts!`)
-        );
-        console.log(
-          chalk.yellow(`  The correct word was: "${word}"\n`)
-        );
+        console.log('');
+        showError('Out of attempts!');
+        console.log(`${YELLOW}  The correct word was: "${word}"${RESET}\n`);
       }
     }
 
     // ── Update stats ──
     if (!stats.wordScramble) {
-      stats.wordScramble = {
-        gamesPlayed: 0,
-        wordsGuessed: 0,
-        totalPoints: 0,
-      };
+      stats.wordScramble = { gamesPlayed: 0, wordsGuessed: 0, totalPoints: 0 };
     }
     stats.wordScramble.gamesPlayed++;
-    stats.totalGamesPlayed = (stats.totalGamesPlayed || 0) + 1;
+    stats.totalGamesPlayed++;
 
     if (correct) {
       stats.wordScramble.wordsGuessed++;
       stats.wordScramble.totalPoints += earnedPoints;
+      stats.totalPoints += earnedPoints;
     }
 
     // ── Play again? ──
-    const again = await askChoice('Play again? (y/n)', ['y', 'n']);
+    console.log('');
+    const again = await askChoice('  Play again? (y/n): ', ['y', 'n']);
     playAgain = again === 'y';
   }
 
