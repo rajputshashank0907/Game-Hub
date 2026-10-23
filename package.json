@@ -1,0 +1,14 @@
+{
+  "name": "terminal-game-hub",
+  "version": "1.0.0",
+  "description": "Terminal Game Hub — A command-line application featuring multiple mini-games in one place.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test tests/"
+  },
+  "keywords": ["terminal", "game", "cli", "mini-games"],
+  "author": "",
+  "license": "ISC"
+}
