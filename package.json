@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test tests/"
+    "test": "node --test tests/*.test.js"
   },
   "keywords": ["terminal", "game", "cli", "mini-games"],
   "author": "",

@@ -10,19 +10,24 @@
 import * as readline from 'readline/promises';
 import { showError } from './display.js';
 
-// ----- Shared Readline Interface -----
-// We create a single readline interface for the entire app.
-// This reads from stdin and writes prompts to stdout.
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+// ----- Shared Readline Interface (Lazy Initialized) -----
+// Lazily created upon first prompt so importing this module
+// during automated tests doesn't keep stdin open.
+let rl = null;
 
-// Handle clean exit on Ctrl+C (SIGINT) or stream close
-rl.on('close', () => {
-  console.log('\n👋 Thanks for playing! Goodbye!\n');
-  process.exit(0);
-});
+export function getReadlineInterface() {
+  if (!rl) {
+    rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    rl.on('close', () => {
+      // Graceful handler if closed externally
+    });
+  }
+  return rl;
+}
 
 // ============================================================
 // askQuestion — Ask the user a question and return their answer
@@ -32,7 +37,8 @@ rl.on('close', () => {
 // ============================================================
 export async function askQuestion(prompt) {
   try {
-    const answer = await rl.question(prompt);
+    const activeRL = getReadlineInterface();
+    const answer = await activeRL.question(prompt);
     return answer.trim();
   } catch {
     // If EOF or stream error, return empty string gracefully
@@ -54,14 +60,14 @@ export async function askQuestion(prompt) {
 export async function askNumber(prompt, min, max) {
   while (true) {
     const input = await askQuestion(prompt);
-    const num = parseInt(input, 10);
+    const num = Number(input.trim());
 
     // Check if it's a valid integer and within bounds
-    if (!isNaN(num) && Number.isInteger(num) && num >= min && num <= max) {
+    if (input.trim() !== '' && !isNaN(num) && Number.isInteger(num) && num >= min && num <= max) {
       return num;
     }
 
-    showError(`Please enter a valid number between ${min} and ${max}.`);
+    showError(`Please enter a valid whole number between ${min} and ${max}.`);
   }
 }
 
@@ -76,12 +82,11 @@ export async function askNumber(prompt, min, max) {
 // @returns {Promise<string>} The user's choice (lowercase)
 // ============================================================
 export async function askChoice(prompt, validChoices) {
-  // Normalize valid choices to lowercase for comparison
-  const lowerChoices = validChoices.map(c => c.toLowerCase());
+  const lowerChoices = validChoices.map((c) => String(c).toLowerCase());
 
   while (true) {
     const input = await askQuestion(prompt);
-    const normalized = input.toLowerCase();
+    const normalized = input.trim().toLowerCase();
 
     if (lowerChoices.includes(normalized)) {
       return normalized;
@@ -102,7 +107,7 @@ export async function askChoice(prompt, validChoices) {
 export async function askYesNo(prompt) {
   while (true) {
     const input = await askQuestion(`${prompt} (y/n): `);
-    const normalized = input.toLowerCase();
+    const normalized = input.trim().toLowerCase();
 
     if (normalized === 'y' || normalized === 'yes') {
       return true;
@@ -130,5 +135,8 @@ export async function waitForEnter(msg = 'Press Enter to continue...') {
 // Call this when the app is shutting down to clean up resources.
 // ============================================================
 export function closeInput() {
-  rl.close();
+  if (rl) {
+    rl.close();
+    rl = null;
+  }
 }
